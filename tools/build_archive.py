@@ -41,6 +41,11 @@ h1{margin:0 0 6px;font-size:20px;font-weight:850;letter-spacing:-.01em;text-alig
 .stats .k{font-size:10.5px;color:var(--brown);letter-spacing:.04em}
 .stats .v{font-size:15px;font-weight:750;font-variant-numeric:tabular-nums;margin-top:3px;word-break:break-all}
 h2{font-size:12px;font-weight:800;color:var(--brown);letter-spacing:.06em;margin:0 0 12px;text-transform:uppercase}
+.chart-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.chart-head h2{margin:0}
+.seg{display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.seg button{border:0;background:#fff;color:var(--brown);font:inherit;font-size:11px;padding:5px 12px;cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--yellow);color:var(--ink);font-weight:700}
 .chart svg{display:block;width:100%;height:150px}
 .axis{display:flex;justify-content:space-between;font-size:10.5px;color:#a2947d;margin-top:6px;font-variant-numeric:tabular-nums}
 .board{list-style:none;margin:0;padding:0}
@@ -84,7 +89,13 @@ ul em,.board em{font-style:normal;color:#a2947d;font-size:11px;margin-left:6px}
 </div>
 
 <div class="card">
-  <h2>10 分あたりのお菓子（縦軸は対数）</h2>
+  <div class="chart-head">
+    <h2 id="chart-title">10 分あたりのお菓子</h2>
+    <div class="seg" role="group" aria-label="縦軸">
+      <button data-mode="log" aria-pressed="true">対数</button>
+      <button data-mode="linear" aria-pressed="false">実数</button>
+    </div>
+  </div>
   <div class="chart"><svg id="spark" viewBox="0 0 700 150" preserveAspectRatio="none"></svg></div>
   <div class="axis"><span id="t0"></span><span id="t1"></span></div>
 </div>
@@ -116,7 +127,6 @@ ul em,.board em{font-style:normal;color:#a2947d;font-size:11px;margin-left:6px}
     エラーは775件（0.001%）で、すべてクライアント由来の400だった。
   </p>
   <p class="note" style="margin-top:10px">
-    数字はすべて一の位まで載せ、丸めていない。大きい数字の下に出る「垓」の表記だけは、読みやすさのために併記した。
     アクセス元のIPアドレスは集計にだけ使い、このページには載せていない。名前は送信者が入力したものだ。
   </p>
 </div>
@@ -144,31 +154,45 @@ $('#period').textContent = ts(D.meta.first)+' から '+ts(D.meta.last)+' まで�
 $('#t0').textContent = ts(D.meta.first); $('#t1').textContent = ts(D.meta.last);
 $('#gen').textContent = ts(D.meta.generated);
 
-(function(){
-  // log scale: the quiet hours are ~1e15 and the bursts ~1e18, so linear
-  // collapses everything but the peak.
+function drawChart(mode){
   const w=700,h=150,pad=4;
   const vals=D.timeline.map(x=>x.c||1);
-  const logs=vals.map(v=>Math.log10(v));
-  const hi=Math.ceil(Math.max(...logs));
-  const lo=Math.min(15, Math.floor(Math.min(...logs))); // floor at 1,000兆: below that is noise
+  const mx=Math.max(...vals,1);
+  const lo=Math.min(15, Math.floor(Math.log10(Math.min(...vals))));
+  const hi=Math.ceil(Math.log10(mx));
   const span=Math.max(hi-lo,1);
-  const yOf=v=>h-pad-(h-2*pad)*(Math.log10(Math.max(v,Math.pow(10,lo)))-lo)/span;
+  const yLog=v=>h-pad-(h-2*pad)*(Math.log10(Math.max(v,Math.pow(10,lo)))-lo)/span;
+  const yLin=v=>h-pad-(h-2*pad)*(v/mx);
+  const yOf = mode==='log' ? yLog : yLin;
   const xOf=i=>pad+(w-2*pad)*i/Math.max(vals.length-1,1);
   const lab=e=>{ if(e>=16) return (10**(e-16)).toLocaleString('ja-JP')+'京';
                  return (10**(e-12)).toLocaleString('ja-JP')+'兆'; };
   let grid='';
-  for(let e=lo;e<=hi;e++){
-    const y=yOf(Math.pow(10,e)).toFixed(1);
-    grid+='<line x1="'+pad+'" y1="'+y+'" x2="'+(w-pad)+'" y2="'+y+'" stroke="#EFE5D2" stroke-width="1" stroke-dasharray="'+(e%2?'2 4':'0')+'"/>';
-    if(e%2===0||e===hi) grid+='<text x="'+(pad+2)+'" y="'+(y-3)+'" font-size="9" fill="#b3a48c" stroke="#fff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">'+lab(e)+'</text>';
+  if(mode==='log'){
+    for(let e=lo;e<=hi;e++){
+      const y=yOf(Math.pow(10,e)).toFixed(1);
+      grid+='<line x1="'+pad+'" y1="'+y+'" x2="'+(w-pad)+'" y2="'+y+'" stroke="#EFE5D2" stroke-width="1" stroke-dasharray="'+(e%2?'2 4':'0')+'"/>';
+      if(e%2===0||e===hi) grid+='<text x="'+(pad+2)+'" y="'+(y-3)+'" font-size="9" fill="#b3a48c" stroke="#fff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">'+lab(e)+'</text>';
+    }
+  }else{
+    for(const f of [0.5,1]){
+      const y=yOf(mx*f).toFixed(1);
+      grid+='<line x1="'+pad+'" y1="'+y+'" x2="'+(w-pad)+'" y2="'+y+'" stroke="#EFE5D2" stroke-width="1" stroke-dasharray="'+(f<1?'2 4':'0')+'"/>';
+      if(f<1) grid+='<text x="'+(pad+2)+'" y="'+(y-3)+'" font-size="9" fill="#b3a48c" stroke="#fff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">'+approx(BigInt(Math.round(mx*f)))+'</text>';
+    }
   }
   let path='';
   vals.forEach((v,i)=>{ const x=xOf(i).toFixed(1), y=yOf(v).toFixed(1); path+=(i?'L':'M')+x+' '+y; });
   const area=path+'L'+(w-pad)+' '+(h-pad)+'L'+pad+' '+(h-pad)+'Z';
   $('#spark').innerHTML='<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFDD00" stop-opacity=".8"/><stop offset="1" stop-color="#FFDD00" stop-opacity=".06"/></linearGradient></defs>'+
     '<path d="'+area+'" fill="url(#g)"/>'+grid+'<path d="'+path+'" fill="none" stroke="#E8C800" stroke-width="1.6"/>';
-})();
+  $('#chart-title').textContent='10 分あたりのお菓子（縦軸は'+(mode==='log'?'対数':'実数')+'）';
+}
+drawChart('log');
+document.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.seg button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
+  drawChart(b.dataset.mode);
+});
 
 function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 $('#rows').innerHTML = D.senders.map((s,i)=>
