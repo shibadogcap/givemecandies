@@ -6,7 +6,8 @@
 <meta property="og:type" content="website">
 <meta property="og:title" content="givemecandies の記録">
 <meta property="og:description" content="65,666,798 リクエスト、133,990,739,323,320,559,165 個。ハロウィンの 31 時間。">
-<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="icon.webp" type="image/webp">
+<link rel="apple-touch-icon" href="icon.webp">
 <meta name="twitter:card" content="summary">
 <style>
 :root{--cream:#FFF9EC;--card:#fff;--yellow:#FFDD00;--ink:#2F2A24;--brown:#6B5B4B;--line:#EFE5D2;--soft:#FFFDF6}
@@ -17,7 +18,7 @@ body{margin:0;background:var(--cream);color:var(--ink);
  padding:28px 16px 48px;display:flex;justify-content:center}
 .wrap{width:100%;max-width:760px}
 .brand{display:flex;align-items:center;gap:8px;justify-content:center;margin-bottom:18px;font-weight:800;color:var(--brown);font-size:15px}
-.brand .dot{width:18px;height:18px;border-radius:50%;background:var(--yellow);display:grid;place-items:center;font-size:10px}
+.brand .av{width:24px;height:24px;border-radius:50%;object-fit:cover;box-shadow:0 0 0 2px #fff}
 .card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:28px 24px;box-shadow:0 18px 40px -24px #6B5B4B55,0 2px 0 #EFE5D2;margin-bottom:14px}
 h1{margin:0 0 6px;font-size:20px;font-weight:850;letter-spacing:-.01em;text-align:center}
 .sub{margin:0 0 22px;text-align:center;font-size:12.5px;color:var(--brown);line-height:1.7}
@@ -32,14 +33,12 @@ h1{margin:0 0 6px;font-size:20px;font-weight:850;letter-spacing:-.01em;text-alig
 h2{font-size:12px;font-weight:800;color:var(--brown);letter-spacing:.06em;margin:0 0 12px;text-transform:uppercase}
 .chart svg{display:block;width:100%;height:150px}
 .axis{display:flex;justify-content:space-between;font-size:10.5px;color:#a2947d;margin-top:6px;font-variant-numeric:tabular-nums}
-table{width:100%;border-collapse:collapse;font-size:13px}
-th{text-align:left;font-size:10.5px;color:var(--brown);font-weight:700;padding:0 0 8px;border-bottom:1px solid var(--line)}
-th.r,td.r{text-align:right;font-variant-numeric:tabular-nums}
-td{padding:8px 0;border-bottom:1px solid #F7F0E1}
-tr:last-child td{border-bottom:0}
-.rank{color:#b3a48c;width:26px;font-variant-numeric:tabular-nums}
-.nm{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:0}
-td.r{font-size:12px;padding-left:10px;white-space:nowrap}
+.board{list-style:none;margin:0;padding:0}
+.board li{display:flex;gap:10px;align-items:baseline;padding:8px 0;border-bottom:1px solid #F7F0E1}
+.board li:last-child{border-bottom:0}
+.board .pos{flex:none;width:24px;text-align:right;color:#b3a48c;font-variant-numeric:tabular-nums;font-size:12px}
+.board .nm{flex:1;min-width:0;font-weight:600;overflow-wrap:anywhere;word-break:break-word;line-height:1.45}
+.board .val{flex:none;font-size:12px;font-variant-numeric:tabular-nums}
 .cols{display:grid;grid-template-columns:1fr 1fr;gap:22px}
 ul{margin:0;padding:0;list-style:none}
 ul li{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid #F7F0E1;font-size:12.5px}
@@ -47,10 +46,16 @@ ul li:last-child{border-bottom:0}
 ul .n{color:var(--brown);font-variant-numeric:tabular-nums}
 .note{font-size:11.5px;color:var(--brown);line-height:1.9}
 .note b{color:var(--ink)}
-@media (max-width:560px){.cols{grid-template-columns:1fr}.grid{grid-template-columns:1fr}}
+@media (max-width:560px){
+  .cols{grid-template-columns:1fr}
+  .grid{grid-template-columns:1fr}
+  .board .val{font-size:10.5px}
+  ul li{align-items:flex-start}
+  ul li span:first-child{min-width:0;overflow-wrap:anywhere;word-break:break-word}
+}
 </style></head>
 <body><div class="wrap">
-<div class="brand"><span class="dot">🍬</span>givemecandies</div>
+<div class="brand"><img class="av" src="icon.webp" alt="">givemecandies</div>
 
 <div class="card">
   <div class="hero">
@@ -73,7 +78,7 @@ ul .n{color:var(--brown);font-variant-numeric:tabular-nums}
 
 <div class="card">
   <h2>お菓子をくれた人</h2>
-  <table><thead><tr><th>#</th><th>名前</th><th class="r">お菓子</th></tr></thead><tbody id="rows"></tbody></table>
+  <ol class="board" id="rows"></ol>
 </div>
 
 <div class="card">
@@ -91,14 +96,15 @@ ul .n{color:var(--brown);font-variant-numeric:tabular-nums}
 <div class="card">
   <h2>これは何だったか</h2>
   <p class="note">
-    2026 年のハロウィンに、OCI の Always Free（Ampere A1 2 OCPU / 12GB）で動かした「任意個のお菓子を送れる」ページの記録。
-    1 リクエストで最大 2 兆個を送れる設計なので、65,666,798 リクエストが <b>133,990,739,323,320,559,165 個</b> になった。
-    書き込みはメモリで加算して 1 秒に 1 回だけディスクへ、応答は本文なしの 204。カウンタは 64bit に収まらないので可変長整数で持っている。
-    31 時間で落ちず、再起動も 0 回。エラーは 775 件（0.001%）で、すべてクライアント由来の 400。
+    2026年のハロウィンに、OCIのAlways Free（Ampere A1 2 OCPU / 12GB）で「任意個のお菓子を送れる」ページを公開した。
+    1リクエストで最大2兆個を送れる設計なので、65,666,798リクエストで133,990,739,323,320,559,165個まで積み上がった。
+    書き込みはメモリ上で加算し、ディスクへは1秒に1回だけ書く。応答は本文なしの204だ。
+    カウンタは64bitに収まらないため、可変長の整数で持っている。31時間止まらず、再起動は0回。
+    エラーは775件（0.001%）で、すべてクライアント由来の400だった。
   </p>
   <p class="note" style="margin-top:10px">
-    数字はすべて一の位まで、丸めずに載せている。上の大きい数字の下に出る「京」表記だけは読みやすいように併記したもの。
-    アクセス元の IP アドレスは集計に使っただけで、このページには載せていない。名前は送信者が入力したもの。
+    数字はすべて一の位まで載せ、丸めていない。大きい数字の下に出る「垓」の表記だけは、読みやすさのために併記した。
+    アクセス元のIPアドレスは集計にだけ使い、このページには載せていない。名前は送信者が入力したものだ。
   </p>
 </div>
 
@@ -117,7 +123,7 @@ function ts(t){ return new Date(t*1000).toLocaleString('ja-JP',{timeZone:'Asia/T
 
 const total = BigInt(D.meta.total);
 $('#total').textContent = exact(total);
-$('#unit').textContent = '（' + approx(total) + '）';
+$('#unit').textContent = '（' + approx(total) + '個）';
 $('#reqs').textContent = exact(BigInt(D.meta.requests));
 $('#peak').textContent = exact(BigInt(D.meta.peak)) + ' req/s';
 $('#flushes').textContent = exact(BigInt(D.meta.flushes));
@@ -131,7 +137,8 @@ $('#gen').textContent = ts(D.meta.generated);
   const w=700,h=150,pad=4;
   const vals=D.timeline.map(x=>x.c||1);
   const logs=vals.map(v=>Math.log10(v));
-  const lo=Math.floor(Math.min(...logs)), hi=Math.ceil(Math.max(...logs));
+  const hi=Math.ceil(Math.max(...logs));
+  const lo=Math.min(14, Math.floor(Math.min(...logs))); // floor at 100兆: below that is noise
   const span=Math.max(hi-lo,1);
   const yOf=v=>h-pad-(h-2*pad)*(Math.log10(Math.max(v,Math.pow(10,lo)))-lo)/span;
   const xOf=i=>pad+(w-2*pad)*i/Math.max(vals.length-1,1);
@@ -152,7 +159,7 @@ $('#gen').textContent = ts(D.meta.generated);
 
 function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 $('#rows').innerHTML = D.senders.slice(0,15).map((s,i)=>
-  '<tr><td class="rank">'+(i+1)+'</td><td class="nm">'+esc(s.n)+'</td><td class="r">'+exact(BigInt(s.t))+'</td></tr>').join('');
+  '<li><span class="pos">'+(i+1)+'</span><span class="nm">'+esc(s.n)+'</span><span class="val">'+exact(BigInt(s.t))+'</span></li>').join('');
 
 function ul(el,arr){ el.innerHTML=arr.map(a=>'<li><span>'+esc(a.k)+'</span><span class="n">'+exact(BigInt(a.n))+'</span></li>').join(''); }
 ul($('#ctry'), Object.entries(D.countries).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([k,n])=>({k,n})));
