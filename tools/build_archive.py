@@ -35,11 +35,11 @@ h1{margin:0 0 6px;font-size:20px;font-weight:850;letter-spacing:-.01em;text-alig
 .hero{text-align:center;padding:6px 0 4px}
 .num{font-variant-numeric:tabular-nums;font-size:clamp(19px,4.4vw,33px);font-weight:850;letter-spacing:-.01em;line-height:1.25;
  word-break:break-all;margin:0}
-.num .u{display:block;font-size:12.5px;font-weight:650;color:var(--brown);letter-spacing:0;margin-top:6px}
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:22px}
-.cell{background:var(--soft);border:1px solid var(--line);border-radius:14px;padding:12px 10px;text-align:center}
-.cell .k{font-size:10.5px;color:var(--brown);letter-spacing:.04em}
-.cell .v{font-size:15px;font-weight:750;font-variant-numeric:tabular-nums;margin-top:3px;word-break:break-all}
+.num .su{font-size:.52em;font-weight:750;margin-left:2px;letter-spacing:0}
+.unit{font-size:12px;color:var(--brown);margin:6px 0 0;font-variant-numeric:tabular-nums}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:24px;padding-top:18px;border-top:1px solid var(--line);text-align:center}
+.stats .k{font-size:10.5px;color:var(--brown);letter-spacing:.04em}
+.stats .v{font-size:15px;font-weight:750;font-variant-numeric:tabular-nums;margin-top:3px;word-break:break-all}
 h2{font-size:12px;font-weight:800;color:var(--brown);letter-spacing:.06em;margin:0 0 12px;text-transform:uppercase}
 .chart svg{display:block;width:100%;height:150px}
 .axis{display:flex;justify-content:space-between;font-size:10.5px;color:#a2947d;margin-top:6px;font-variant-numeric:tabular-nums}
@@ -48,12 +48,13 @@ h2{font-size:12px;font-weight:800;color:var(--brown);letter-spacing:.06em;margin
 .board li:last-child{border-bottom:0}
 .board .pos{flex:none;width:24px;text-align:right;color:#b3a48c;font-variant-numeric:tabular-nums;font-size:12px}
 .board .nm{flex:1;min-width:0;font-weight:600;overflow-wrap:anywhere;word-break:break-word;line-height:1.45}
-.board .val{flex:none;font-size:12px;font-variant-numeric:tabular-nums}
+.board .val{flex:none;font-size:12px;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
 .cols{display:grid;grid-template-columns:1fr 1fr;gap:22px}
 ul{margin:0;padding:0;list-style:none}
 ul li{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid #F7F0E1;font-size:12.5px}
 ul li:last-child{border-bottom:0}
-ul .n{color:var(--brown);font-variant-numeric:tabular-nums}
+ul .n{color:var(--brown);font-variant-numeric:tabular-nums;white-space:nowrap}
+ul em,.board em{font-style:normal;color:#a2947d;font-size:11px;margin-left:6px}
 .note{font-size:11.5px;color:var(--brown);line-height:1.9}
 .note b{color:var(--ink)}
 @media (max-width:560px){
@@ -72,11 +73,12 @@ ul .n{color:var(--brown);font-variant-numeric:tabular-nums}
     <div class="avatar"><img src="icon.webp" alt=""></div>
     <h1>ハロウィンの記録</h1>
     <p class="sub" id="period"></p>
-    <p class="num"><span id="total">0</span><span class="u" id="unit"></span></p>
-    <div class="grid">
-      <div class="cell"><div class="k">リクエスト</div><div class="v" id="reqs">0</div></div>
-      <div class="cell"><div class="k">ピーク</div><div class="v" id="peak">0</div></div>
-      <div class="cell"><div class="k">書き込み</div><div class="v" id="flushes">0</div></div>
+    <p class="num"><span id="total">0</span><span class="su">個</span></p>
+    <p class="unit" id="unit"></p>
+    <div class="stats">
+      <div><div class="k">リクエスト</div><div class="v" id="reqs">0</div></div>
+      <div><div class="k">ピーク</div><div class="v" id="peak">0</div></div>
+      <div><div class="k">書き込み</div><div class="v" id="flushes">0</div></div>
     </div>
   </div>
 </div>
@@ -149,7 +151,7 @@ $('#gen').textContent = ts(D.meta.generated);
   const vals=D.timeline.map(x=>x.c||1);
   const logs=vals.map(v=>Math.log10(v));
   const hi=Math.ceil(Math.max(...logs));
-  const lo=Math.min(14, Math.floor(Math.min(...logs))); // floor at 100兆: below that is noise
+  const lo=Math.min(15, Math.floor(Math.min(...logs))); // floor at 1,000兆: below that is noise
   const span=Math.max(hi-lo,1);
   const yOf=v=>h-pad-(h-2*pad)*(Math.log10(Math.max(v,Math.pow(10,lo)))-lo)/span;
   const xOf=i=>pad+(w-2*pad)*i/Math.max(vals.length-1,1);
@@ -169,12 +171,20 @@ $('#gen').textContent = ts(D.meta.generated);
 })();
 
 function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
-$('#rows').innerHTML = D.senders.slice(0,15).map((s,i)=>
-  '<li><span class="pos">'+(i+1)+'</span><span class="nm">'+esc(s.n)+'</span><span class="val">'+exact(BigInt(s.t))+'</span></li>').join('');
+$('#rows').innerHTML = D.senders.map((s,i)=>
+  '<li><span class="pos">'+(i+1)+'</span><span class="nm">'+esc(s.n)+'</span><span class="val">'+exact(BigInt(s.t))+'<em>'+share(BigInt(s.t), total)+'</em></span></li>').join('');
 
-function ul(el,arr){ el.innerHTML=arr.map(a=>'<li><span>'+esc(a.k)+'</span><span class="n">'+exact(BigInt(a.n))+'</span></li>').join(''); }
-ul($('#ctry'), Object.entries(D.countries).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([k,n])=>({k,n})));
-ul($('#uas'), D.uas.map(x=>({k:x.k.slice(0,34),n:x.n})));
+function share(v, base){
+  if(base===0n) return '';
+  const p = Number(v)*100/Number(base);
+  return p>=0.01 ? p.toFixed(2)+'%' : '<0.01%';
+}
+function ul(el,arr){
+  let base=0n; for(const a of arr) base+=BigInt(a.n);
+  el.innerHTML=arr.map(a=>'<li><span>'+esc(a.k)+'</span><span class="n">'+exact(BigInt(a.n))+' <em>'+share(BigInt(a.n),base)+'</em></span></li>').join('');
+}
+ul($('#ctry'), Object.entries(D.countries).sort((a,b)=>b[1]-a[1]).map(([k,n])=>({k,n})));
+ul($('#uas'), D.uas.map(x=>({k:x.k.slice(0,48),n:x.n})));
 ul($('#paths'), D.paths.map(x=>({k:x.k,n:x.n})));
 ul($('#st'), Object.entries(D.status).sort((a,b)=>b[1]-a[1]).map(([k,n])=>({k,n})));
 </script>
