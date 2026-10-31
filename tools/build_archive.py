@@ -14,6 +14,7 @@ HTML = r"""<!doctype html>
 <meta property="og:type" content="website">
 <meta property="og:title" content="givemecandies の記録">
 <meta property="og:description" content="65,666,798 リクエスト、133,990,739,323,320,559,165 個。ハロウィンの 31 時間。">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
 <meta name="twitter:card" content="summary">
 <style>
 :root{--cream:#FFF9EC;--card:#fff;--yellow:#FFDD00;--ink:#2F2A24;--brown:#6B5B4B;--line:#EFE5D2;--soft:#FFFDF6}
