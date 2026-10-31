@@ -65,7 +65,7 @@ ul .n{color:var(--brown);font-variant-numeric:tabular-nums}
 </div>
 
 <div class="card">
-  <h2>10 分あたりのお菓子</h2>
+  <h2>10 分あたりのお菓子（縦軸は対数）</h2>
   <div class="chart"><svg id="spark" viewBox="0 0 700 150" preserveAspectRatio="none"></svg></div>
   <div class="axis"><span id="t0"></span><span id="t1"></span></div>
 </div>
@@ -125,13 +125,28 @@ $('#t0').textContent = ts(D.meta.first); $('#t1').textContent = ts(D.meta.last);
 $('#gen').textContent = ts(D.meta.generated);
 
 (function(){
-  const w=700,h=150,pad=4, pts=D.timeline.map(x=>x.c), mx=Math.max(...pts,1), n=pts.length;
+  // log scale: the quiet hours are ~1e15 and the bursts ~1e18, so linear
+  // collapses everything but the peak.
+  const w=700,h=150,pad=4;
+  const vals=D.timeline.map(x=>x.c||1);
+  const logs=vals.map(v=>Math.log10(v));
+  const lo=Math.floor(Math.min(...logs)), hi=Math.ceil(Math.max(...logs));
+  const span=Math.max(hi-lo,1);
+  const yOf=v=>h-pad-(h-2*pad)*(Math.log10(Math.max(v,Math.pow(10,lo)))-lo)/span;
+  const xOf=i=>pad+(w-2*pad)*i/Math.max(vals.length-1,1);
+  const lab=e=>{ if(e>=16) return (10**(e-16)).toLocaleString('ja-JP')+'京';
+                 return (10**(e-12)).toLocaleString('ja-JP')+'兆'; };
+  let grid='';
+  for(let e=lo;e<=hi;e++){
+    const y=yOf(Math.pow(10,e)).toFixed(1);
+    grid+='<line x1="'+pad+'" y1="'+y+'" x2="'+(w-pad)+'" y2="'+y+'" stroke="#EFE5D2" stroke-width="1" stroke-dasharray="'+(e%2?'2 4':'0')+'"/>';
+    if(e%2===0||e===hi) grid+='<text x="'+(pad+2)+'" y="'+(y-3)+'" font-size="9" fill="#b3a48c" stroke="#fff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">'+lab(e)+'</text>';
+  }
   let path='';
-  pts.forEach((v,i)=>{ const x=pad+(w-2*pad)*i/Math.max(n-1,1), y=h-pad-(h-2*pad)*(v/mx);
-    path+=(i?'L':'M')+x.toFixed(1)+' '+y.toFixed(1); });
+  vals.forEach((v,i)=>{ const x=xOf(i).toFixed(1), y=yOf(v).toFixed(1); path+=(i?'L':'M')+x+' '+y; });
   const area=path+'L'+(w-pad)+' '+(h-pad)+'L'+pad+' '+(h-pad)+'Z';
-  $('#spark').innerHTML='<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFDD00" stop-opacity=".85"/><stop offset="1" stop-color="#FFDD00" stop-opacity=".12"/></linearGradient></defs>'+
-    '<path d="'+area+'" fill="url(#g)"/><path d="'+path+'" fill="none" stroke="#E8C800" stroke-width="1.6"/>';
+  $('#spark').innerHTML='<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFDD00" stop-opacity=".8"/><stop offset="1" stop-color="#FFDD00" stop-opacity=".06"/></linearGradient></defs>'+
+    '<path d="'+area+'" fill="url(#g)"/>'+grid+'<path d="'+path+'" fill="none" stroke="#E8C800" stroke-width="1.6"/>';
 })();
 
 function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
