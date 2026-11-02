@@ -5,15 +5,20 @@ import json, datetime, pathlib
 root = pathlib.Path(__file__).resolve().parent.parent
 d = json.loads((root / "docs" / "data.json").read_text())
 data_js = json.dumps(d, ensure_ascii=False, separators=(",", ":"))
+meta = d["meta"]
+TOTAL = f"{int(meta['total']):,}"
+REQS  = f"{meta['requests']:,}"
+HOURS = round(meta["seconds"] / 3600)
+ERRS  = d["status"].get("400", 0) + d["status"].get("404", 0)
 
 HTML = r"""<!doctype html>
 <html lang="ja"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>givemecandies の記録</title>
-<meta name="description" content="2026年ハロウィンに公開した「お菓子をあげる」ページの記録。65,666,798 リクエスト。">
+<meta name="description" content="2026年ハロウィンに公開した「お菓子をあげる」ページの記録。{REQS} リクエスト。">
 <meta property="og:type" content="website">
 <meta property="og:title" content="givemecandies の記録">
-<meta property="og:description" content="65,666,798 リクエスト、133,990,739,323,320,559,165 個。ハロウィンの 31 時間。">
+<meta property="og:description" content="{REQS} リクエスト、{TOTAL} 個。ハロウィンの {HOURS} 時間。">
 <link rel="icon" href="icon.webp" type="image/webp">
 <link rel="apple-touch-icon" href="icon.webp">
 <meta name="twitter:card" content="summary">
@@ -121,10 +126,10 @@ ul em,.board em{font-style:normal;color:#a2947d;font-size:11px;margin-left:6px}
   <h2>これは何だったか</h2>
   <p class="note">
     2026年のハロウィンに、OCIのAlways Free（Ampere A1 2 OCPU / 12GB）で「任意個のお菓子を送れる」ページを公開した。
-    1リクエストで最大2兆個を送れる設計なので、65,666,798リクエストで133,990,739,323,320,559,165個まで積み上がった。
+    1リクエストで最大2兆個を送れる設計なので、{REQS}リクエストで{TOTAL}個まで積み上がった。
     書き込みはメモリ上で加算し、ディスクへは1秒に1回だけ書く。応答は本文なしの204だ。
-    カウンタは64bitに収まらないため、可変長の整数で持っている。31時間止まらず、再起動は0回。
-    エラーは775件（0.001%）で、すべてクライアント由来の400だった。
+    カウンタは64bitに収まらないため、可変長の整数で持っている。{HOURS}時間止まらず、再起動は0回。
+    エラーは{ERRS}件で、すべてクライアント由来の400だった。
   </p>
   <p class="note" style="margin-top:10px">
     アクセス元のIPアドレスは集計にだけ使い、このページには載せていない。名前は送信者が入力したものだ。
@@ -214,5 +219,8 @@ ul($('#st'), Object.entries(D.status).sort((a,b)=>b[1]-a[1]).map(([k,n])=>({k,n}
 </script>
 </body></html>"""
 
-(root / "docs" / "index.html").write_text(HTML.replace("__DATA__", data_js), encoding="utf-8")
+html = (HTML.replace("__DATA__", data_js)
+            .replace("{TOTAL}", TOTAL).replace("{REQS}", REQS)
+            .replace("{HOURS}", str(HOURS)).replace("{ERRS}", f"{ERRS:,}"))
+(root / "docs" / "index.html").write_text(html, encoding="utf-8")
 print("wrote docs/index.html", (root / "docs" / "index.html").stat().st_size, "bytes")
