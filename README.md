@@ -45,6 +45,15 @@ CANDY_ADDR=:8080 CANDY_DATA=/var/lib/candy ./candy
 | `GET /api/attack` | ハニーポット側の集計（UA、パス、国） |
 | `GET /attack` | その表示ページ |
 
+## 負荷試験
+
+`gun/` に攻撃用のクライアントを置いてある。
+
+```sh
+cd gun && go build -o gun .
+./gun -url https://<host> -c 128 -d 15 -amount 1
+```
+
 ## デプロイ
 
 `deploy/deploy.sh` は新しいバイナリを先に同じポートへ bind（SO_REUSEPORT）させ、
